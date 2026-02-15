@@ -13,6 +13,17 @@ const WORDS: WordData[] = [
   { word: "LEBARAN", hint: "Hari raya umat Muslim setelah Ramadan", emoji: "🌙" },
   { word: "KETUPAT", hint: "Makanan khas dari beras dalam anyaman janur", emoji: "🍲" },
   { word: "MUDIK", hint: "Tradisi pulang ke kampung halaman", emoji: "🚗" },
+  { word: "KAMPUNG", hint: "Tempat tinggal di masa kecil", emoji: "🏠" },
+  { word: "RAMADHAN", hint: "Bulan suci umat Muslim untuk berpuasa", emoji: "🕌" },
+  { word: "TAKBIR", hint: "Seruan yang dikumandangkan saat malam Lebaran", emoji: "🔊" },
+  { word: "IMSAK", hint: "Tanda waktu berhenti makan saat sahur", emoji: "⏰" },
+  { word: "SAHUR", hint: "Makan sebelum imsak saat puasa", emoji: "🌄" },
+  { word: "BUKBER", hint: "Singkatan dari buka bersama", emoji: "🍽️" },
+  { word: "THR", hint: "Uang yang dibagikan saat Lebaran", emoji: "💸" },
+  { word: "OPOR", hint: "Hidangan ayam bersantan khas Lebaran", emoji: "🍗" },
+  { word: "SILATURAHMI", hint: "Mengunjungi keluarga dan kerabat", emoji: "🤝" },
+  { word: "TAKJIL", hint: "Makanan untuk berbuka puasa", emoji: "🥤" },
+  { word: "ZAKAT", hint: "Kewajiban berbagi kepada yang membutuhkan", emoji: "🤲" },
 ];
 
 const QWERTY_ROWS = [
@@ -25,6 +36,8 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<'start' | 'playing' | 'won'>('start');
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [guessedLetters, setGuessedLetters] = useState<Set<string>>(new Set());
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [totalTime, setTotalTime] = useState<number>(0);
 
   const currentWordData = WORDS[currentWordIndex];
   const currentWord = currentWordData.word.toUpperCase();
@@ -33,6 +46,8 @@ const App: React.FC = () => {
     setGameState('playing');
     setCurrentWordIndex(0);
     setGuessedLetters(new Set());
+    setStartTime(Date.now());
+    setTotalTime(0);
   };
 
   const handleGuess = useCallback((letter: string | undefined) => {
@@ -77,6 +92,12 @@ const App: React.FC = () => {
     const allGuessed = currentWord.split('').every(char => guessedLetters.has(char));
     if (allGuessed) {
       setGameState('won');
+      const isLastWord = currentWordIndex === WORDS.length - 1;
+
+      if (isLastWord && startTime) {
+        setTotalTime(Math.floor((Date.now() - startTime) / 1000));
+      }
+
       confetti({
         particleCount: 150,
         spread: 70,
@@ -84,7 +105,7 @@ const App: React.FC = () => {
         colors: ['#ff69b4', '#4caf50', '#ffffff']
       });
     }
-  }, [guessedLetters, currentWord, gameState]);
+  }, [guessedLetters, currentWord, gameState, currentWordIndex, startTime]);
 
   const nextWord = () => {
     if (currentWordIndex < WORDS.length - 1) {
@@ -94,6 +115,12 @@ const App: React.FC = () => {
     } else {
       setGameState('start');
     }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins > 0 ? `${mins}m ` : ""}${secs}s`;
   };
 
   return (
@@ -108,7 +135,7 @@ const App: React.FC = () => {
             className="glass-card"
           >
             <motion.span className="emoji-hint floating" style={{ fontSize: '10rem' }}>🕌</motion.span>
-            <h1>Sambung Kata</h1>
+            <h1>Tebak Kata</h1>
             <p style={{ marginBottom: '2.5rem', fontSize: '1.4rem', color: '#555', fontWeight: 500 }}>
               Halal Bi Halal Edition
             </p>
@@ -192,10 +219,21 @@ const App: React.FC = () => {
             >
               <PartyPopper size={80} color="#ff69b4" strokeWidth={1.5} style={{ marginBottom: '1rem' }} />
             </motion.div>
-            <h1>Hebat!</h1>
-            <p style={{ fontSize: '1.5rem', marginBottom: '2rem', fontWeight: 600 }}>
-              Kamu berhasil menebak kata: <span style={{ color: '#4caf50' }}>{currentWord}</span>
+            <h1>{currentWordIndex < WORDS.length - 1 ? "Hebat!" : "You win!"}</h1>
+
+            <p style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: 600 }}>
+              {currentWordIndex < WORDS.length - 1 ? (
+                <>Kamu berhasil menebak kata: <span style={{ color: '#4caf50' }}>{currentWord}</span></>
+              ) : (
+                <>Selamat! Kamu menyelesaikan semua kata!</>
+              )}
             </p>
+
+            {currentWordIndex === WORDS.length - 1 && (
+              <p style={{ fontSize: '1.2rem', marginBottom: '2rem', color: '#666' }}>
+                Waktu total: <span style={{ color: '#ff69b4', fontWeight: 800 }}>{formatTime(totalTime)}</span>
+              </p>
+            )}
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
               {currentWordIndex < WORDS.length - 1 ? (
